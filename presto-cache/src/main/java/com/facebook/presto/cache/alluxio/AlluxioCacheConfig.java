@@ -240,6 +240,7 @@ public class AlluxioCacheConfig
     {
         return shadowCacheType;
     }
+
     @Config("cache.alluxio.shadow-cache-type")
     @ConfigDescription("The type of shadow cache to use")
     public AlluxioCacheConfig setShadowCacheType(String shadowCacheType)
@@ -247,5 +248,4 @@ public class AlluxioCacheConfig
         this.shadowCacheType = shadowCacheType;
         return this;
     }
-
 }
