@@ -39,6 +39,7 @@ public class AlluxioCacheConfig
     private boolean shadowCacheEnabled;
     private Duration shadowCacheWindow = new Duration(7, DAYS);
     private boolean cacheAdaptionEnabled;
+    private String shadowCacheType = "CLOCK_CUCKOO_FILTER";
 
     public boolean isMetricsCollectionEnabled()
     {
@@ -234,4 +235,17 @@ public class AlluxioCacheConfig
         this.cacheAdaptionEnabled = cacheAdaptionEnabled;
         return this;
     }
+
+    public String getShadowCacheType()
+    {
+        return shadowCacheType;
+    }
+    @Config("cache.alluxio.shadow-cache-type")
+    @ConfigDescription("The type of shadow cache to use")
+    public AlluxioCacheConfig setShadowCacheType(String shadowCacheType)
+    {
+        this.shadowCacheType = shadowCacheType;
+        return this;
+    }
+
 }
