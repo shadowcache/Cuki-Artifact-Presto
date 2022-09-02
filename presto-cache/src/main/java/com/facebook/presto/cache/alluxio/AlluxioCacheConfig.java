@@ -38,6 +38,7 @@ public class AlluxioCacheConfig
     private EvictionPolicy evictionPolicy = EvictionPolicy.LRU;
     private boolean shadowCacheEnabled;
     private Duration shadowCacheWindow = new Duration(7, DAYS);
+    private boolean cacheAdaptionEnabled;
 
     public boolean isMetricsCollectionEnabled()
     {
@@ -218,6 +219,19 @@ public class AlluxioCacheConfig
     public AlluxioCacheConfig setShadowCacheWindow(Duration shadowCacheWindow)
     {
         this.shadowCacheWindow = shadowCacheWindow;
+        return this;
+    }
+
+    public boolean isCacheAdaptionEnabled()
+    {
+        return cacheAdaptionEnabled;
+    }
+
+    @Config("cache.alluxio.cache-adaption-enabled")
+    @ConfigDescription("Whether to enable alluxio cache adaption")
+    public AlluxioCacheConfig setCacheAdaptionEnabled(Boolean cacheAdaptionEnabled)
+    {
+        this.cacheAdaptionEnabled = cacheAdaptionEnabled;
         return this;
     }
 }
