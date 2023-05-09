@@ -1,0 +1,31 @@
+
+[+] FC-10GB
+Not running
+Started as 103950
+start timestamp 1683628830
+ops 0
+ops 1
+ops 2
+ops 3
+ops 4
+1683628830,1683629293
+[+] FC-512MB
+Stopped 103950
+Started as 107661
+start timestamp 1683629337
+ops 0
+ops 1
+ops 2
+ops 3
+ops 4
+1683629337,1683629846
+[+] Cuki
+Stopped 107661
+Started as 111713
+start timestamp 1683629890
+ops 0
+ops 1
+ops 2
+ops 3
+ops 4
+1683629890,1683630369

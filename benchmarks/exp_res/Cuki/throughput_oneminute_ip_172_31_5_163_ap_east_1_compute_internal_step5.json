@@ -1,0 +1,1 @@
+{"status": "success", "data": {"resultType": "matrix", "result": [{"metric": {"instance": "localhost:38080", "job": "presto_worker_jmx", "type": "meters"}, "values": [[1683700605, "31541443.218259223"]]}]}}

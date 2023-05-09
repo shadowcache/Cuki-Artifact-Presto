@@ -4,12 +4,13 @@ This is the repository for the artifact evaluation of Cuki. Cuki is described in
 
 Cuki proposes an approximate data structure for efficiently estimating online WSS and IRR for variable-size item access with proven accuracy guarantee. Our solution is cache-friendly, thread-safe, and light-weighted in design. Based on that, we design an adaptive online cache capacity tuning mechanism.
 
-The whole artifact is departed into two parts:
-- wss estimation: http://xxx
-- query engine application: http://xxx
+The whole artifact is departed into three parts:
+- wss estimation: https://github.com/shadowcache/Cuki-Artifact-WSS-Estimation
+- query engine application: https://github.com/shadowcache/Cuki-Artifact-Presto
+- cache system: https://github.com/shadowcache/Cuki-Artifact-Alluxio
 
 ## Experimental Environment
-Meces is implemented on Alluxio, which is compiled using Maven and run with Java. It also relies on Presto and Hive to function properly.
+Cuki is implemented on Alluxio, which is compiled using Maven and run with Java. It also relies on Presto and Hive to function properly.
 
 To save you the trouble of setting up all these components, we provide two ways to get a pre-prepared environment. You can SSH into our pre-prepared machine in the AWS Cloud or deploy the environment yourself.
 
@@ -48,7 +49,7 @@ Dependencies are:
 - S3
 
 
-First, you need to deploy hive with its metastore in hdfs and mysql. The TPC-DS data should be located in S3. Then compile the alluxio provided by us:
+First, you need to deploy hive with its metastore in hdfs and mysql. The TPC-DS data should be located in S3. We also prepare the TPC-DS data in our S3, if you want to access it, please contact us. Then compile the alluxio provided by us:
 ```cmd
 cd alluxio
 mvn clean install -Dmaven.javadoc.skip=true -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -Prelease
@@ -60,6 +61,21 @@ cd presto_cuki
 mvn -N io.takari:maven:wrapper
 mvnw clean install -T2C -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -pl '!presto-docs'
 ``` 
+
+If you decide to use TPC-DS data in our S3, rename the `preto_cuki/etc-example` to the `preto_cuki/etc`, then config the key provided by us to the `presto_cuki/etc/hive.properties`.
+```
+hive.s3.aws-access-key=xxx
+hive.s3.aws-secret-key=xxx
+```
+
+Then, load the data by the command:
+```cmd
+bash ./benchmarks/restart.sh
+export PRESTO="/presto_cuki/presto-cli/target/presto-cli-0.266-SNAPSHOT-executable.jar"
+${PRESTO} -f ./benchmarks/create_from_tpcds_sf10.sql
+hive -f ./benchmarks/create_hive_s3_table.sql
+```
+
 
 The wss-estimation of the paper can be compiled by:
 ```cmd
@@ -73,10 +89,10 @@ mvn assembly:assembly \
   -Dfindbugs.skip=true
 ```
 
-##  Steps for Evaluating Meces
+##  Steps for Evaluating Cuki
 We have automated most of the integration and launching operations of our artifact. You can refer to the script files in wss-estimation and presto_cuki.
 
-### evaluate the accuracy of wss-estimation
+### Evaluate the accuracy of wss-estimation
 1. build the wss-estimation repo:
 ```
 cd wss-estimation
@@ -102,7 +118,7 @@ bash ./bin/accuracy/msr_swamp_mem.sh
 python3 ./plot/plot_msr_accuracy.py
 ```
 
-### evaluate the cache hit rate
+### Evaluate the cache hit rate
 
 1. Build alluxio
 ```cmd
@@ -141,7 +157,7 @@ python3 ./benchmarks/get_metrics.py
 python3 ./benchmarks/plot.py
 ```
 
-### evaluate the accuracy of MRC generation
+### Evaluate the accuracy of MRC generation
 1. switch the wss-estimation's branch to rarcm
 ```cmd
 cd wss-estimation

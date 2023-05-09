@@ -1,0 +1,1 @@
+{"status": "success", "data": {"resultType": "matrix", "result": [{"metric": {"__name__": "com_facebook_alluxio_Client_CacheHitRate_ip_172_31_5_163_ap_east_1_compute_internal_Value", "instance": "localhost:38080", "job": "presto_worker_jmx", "type": "gauges"}, "values": [[1683700605, "0.940300093626008"]]}]}}
