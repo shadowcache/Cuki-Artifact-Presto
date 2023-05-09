@@ -1,115 +1,169 @@
-# Presto [![Build Status](https://travis-ci.com/prestodb/presto.svg?branch=master)](https://travis-ci.com/prestodb/presto)
+# Adaptive Online Cache Capacity Optimization via Lightweight Working Set Size Estimation at Scale
 
-Presto is a distributed SQL query engine for big data.
+This is the repository for the artifact evaluation of Cuki. Cuki is described in the ATC'23 paper "Adaptive Online Cache Capacity Optimization via Lightweight Working Set Size Estimation at Scale".
 
-See the [User Manual](https://prestodb.github.io/docs/current/) for deployment instructions and end user documentation.
+Cuki proposes an approximate data structure for efficiently estimating online WSS and IRR for variable-size item access with proven accuracy guarantee. Our solution is cache-friendly, thread-safe, and light-weighted in design. Based on that, we design an adaptive online cache capacity tuning mechanism.
 
-## 2021 Elections
+The whole artifact is departed into two parts:
+- wss estimation: http://xxx
+- query engine application: http://xxx
 
-Elections are now open for all TSC seats.  [Please see here for more details](https://github.com/prestodb/tsc/blob/master/README.md#2021-elections), including how to submit your nomination.
+## Experimental Environment
+Meces is implemented on Alluxio, which is compiled using Maven and run with Java. It also relies on Presto and Hive to function properly.
 
-## Requirements
+To save you the trouble of setting up all these components, we provide two ways to get a pre-prepared environment. You can SSH into our pre-prepared machine in the AWS Cloud or deploy the environment yourself.
 
-* Mac OS X or Linux
-* Java 8 Update 151 or higher (8u151+), 64-bit. Both Oracle JDK and OpenJDK are supported.
-* Maven 3.3.9+ (for building)
-* Python 2.4+ (for running with the launcher script)
+### Remote Machine via SSH
+We provide an AWS EC2 server and have all the dependencies well-prepared.
 
-## Building Presto
+You can contact us to get access to the machine (ip address and password etc.) anytime during the artifact evaluation process. After that, you can log in via ssh:
 
-Presto is a standard Maven project. Simply run the following command from the project root directory:
+> ssh -p {password} atc23@host
 
-    ./mvnw clean install
+The home directory contains the following files:
+```
+├─ download                 # dependencies
+    ├── apache-hive-3.1.3-bin 
+    ├── apache-maven-3.5.4
+    ├── aws
+    ├── hadoop-3.3.1
+    ├── jdk1.8.0_151
+    ├── jmx_prometheus
+    ├── mysql-connector-jar-8.0.30
+    ├── prometheus-2.37.0.linux-amd64
+├─ alluxio                  # the cache system with cuki
+├─ presto_cuki              # the query system with alluxio
+├─ presto-data              # presto data directory
+├─ wss-estimation           # the wss estimation of cuki
+```
 
-On the first build, Maven will download all the dependencies from the internet and cache them in the local repository (`~/.m2/repository`), which can take a considerable amount of time. Subsequent builds will be faster.
+### Deploy your own environment
+Dependencies are:
+- hive 3.1.3
+- maven 3.5.4
+- hadoop 3.3.1
+- java 8
+- prometheus
+- mysql 8.0.3
+- S3
 
-Presto has a comprehensive set of unit tests that can take several minutes to run. You can disable the tests when building:
 
-    ./mvnw clean install -DskipTests
+First, you need to deploy hive with its metastore in hdfs and mysql. The TPC-DS data should be located in S3. Then compile the alluxio provided by us:
+```cmd
+cd alluxio
+mvn clean install -Dmaven.javadoc.skip=true -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -Prelease
+```
 
-## Running Presto in your IDE
+Then, you can build the presto by:
+```cmd
+cd presto_cuki
+mvn -N io.takari:maven:wrapper
+mvnw clean install -T2C -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -pl '!presto-docs'
+``` 
 
-### Overview
+The wss-estimation of the paper can be compiled by:
+```cmd
+cd wss-estimation
+mvn assembly:assembly \
+  -T 4C \
+  -Dmaven.javadoc.skip=true \
+  -DskipTests \
+  -Dlicense.skip=true \
+  -Dcheckstyle.skip=true \
+  -Dfindbugs.skip=true
+```
 
-After building Presto for the first time, you can load the project into your IDE and run the server. We recommend using [IntelliJ IDEA](http://www.jetbrains.com/idea/). Because Presto is a standard Maven project, you can import it into your IDE using the root `pom.xml` file. In IntelliJ, choose Open Project from the Quick Start box or choose Open from the File menu and select the root `pom.xml` file.
+##  Steps for Evaluating Meces
+We have automated most of the integration and launching operations of our artifact. You can refer to the script files in wss-estimation and presto_cuki.
 
-After opening the project in IntelliJ, double check that the Java SDK is properly configured for the project:
+### evaluate the accuracy of wss-estimation
+1. build the wss-estimation repo:
+```
+cd wss-estimation
+mvn assembly:assembly \
+  -T 4C \
+  -Dmaven.javadoc.skip=true \
+  -DskipTests \
+  -Dlicense.skip=true \
+  -Dcheckstyle.skip=true \
+  -Dfindbugs.skip=true
+```
+3. Run the `.sh` files, note that msr_ccf_mem should run twice with different `OPPO_AGING` parameters (true|false), the cmd will output the result file path.:
+```
+cd wss-estimation
+bash ./bin/accuracy/msr_ccf_mem.sh
+bash ./bin/accuracy/msr_bmc_mem.sh
+bash ./bin/accuracy/msr_mbf_mem.sh
+bash ./bin/accuracy/msr_ss_mem.sh
+bash ./bin/accuracy/msr_swamp_mem.sh
+```
+5. After all methods get evaluated, run the following command to get your figure! The output figure path will displayed in the cmd:
+```
+python3 ./plot/plot_msr_accuracy.py
+```
 
-* Open the File menu and select Project Structure
-* In the SDKs section, ensure that a 1.8 JDK is selected (create one if none exist)
-* In the Project section, ensure the Project language level is set to 8.0 as Presto makes use of several Java 8 language features
+### evaluate the cache hit rate
 
-Presto comes with sample configuration that should work out-of-the-box for development. Use the following options to create a run configuration:
+1. Build alluxio
+```cmd
+cd alluxio
+mvn clean install -Dmaven.javadoc.skip=true -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -Prelease
+```
+2. Build presto
+```cmd
+cd presto_cuki
+mvn -N io.takari:maven:wrapper
+mvnw clean install -T2C -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -pl '!presto-docs'
+```
+3. check whether the hdfs is running by `jps`, if it is running, there will be namenode and datanode, else run the hdfs:
+```cmd
+cd download/hadoop-3.3.1
+bash ./sbin/start-dfs.sh
+```
+4. Run hive metastore
+```cmd
+hive --service metastore
+```
+5. Run prometheus
+```cmd
+cd download/prometheus-2.37.0.linux-amd64
+./prometheus --config.file=cuki.yml
+```
+6. Run Presto evaluate the cache hit rate, open the presto website page at port 8080, you should see it is working:
+```cmd
+cd presto_cuki
+bash ./benchmarks/tpcds_s3.sh 
+```
+7. Run the bash to auto collect exp data and get your figure
+```cmd
+cd presto_cuki
+python3 ./benchmarks/get_metrics.py
+python3 ./benchmarks/plot.py
+```
 
-* Main Class: `com.facebook.presto.server.PrestoServer`
-* VM Options: `-ea -XX:+UseG1GC -XX:G1HeapRegionSize=32M -XX:+UseGCOverheadLimit -XX:+ExplicitGCInvokesConcurrent -Xmx2G -Dconfig=etc/config.properties -Dlog.levels-file=etc/log.properties`
-* Working directory: `$MODULE_WORKING_DIR$` or `$MODULE_DIR$`(Depends your version of IntelliJ)
-* Use classpath of module: `presto-main`
+### evaluate the accuracy of MRC generation
+1. switch the wss-estimation's branch to rarcm
+```cmd
+cd wss-estimation
+git switch rarcm
+```
+2. re-compile the wss-estimation
+```cmd
+mvn assembly:assembly \
+  -T 4C \
+  -Dmaven.javadoc.skip=true \
+  -DskipTests \
+  -Dlicense.skip=true \
+  -Dcheckstyle.skip=true \
+  -Dfindbugs.skip=true
+```
+3. run the scripts:
+```cmd
+bash ./benchmark_scripts/bench_rarcm_mrc.sh
+bash ./benchmark_scripts/bench_cuki_mrc.sh
+```
+4. wait for the exp, and run python files to get your figure:
+```cmd
+python3 ./plot/plot_mrc_accuracy.py
+```
 
-The working directory should be the `presto-main` subdirectory. In IntelliJ, using `$MODULE_DIR$` accomplishes this automatically.
-
-Additionally, the Hive plugin must be configured with location of your Hive metastore Thrift service. Add the following to the list of VM options, replacing `localhost:9083` with the correct host and port (or use the below value if you do not have a Hive metastore):
-
-    -Dhive.metastore.uri=thrift://localhost:9083
-
-### Using SOCKS for Hive or HDFS
-
-If your Hive metastore or HDFS cluster is not directly accessible to your local machine, you can use SSH port forwarding to access it. Setup a dynamic SOCKS proxy with SSH listening on local port 1080:
-
-    ssh -v -N -D 1080 server
-
-Then add the following to the list of VM options:
-
-    -Dhive.metastore.thrift.client.socks-proxy=localhost:1080
-
-### Running the CLI
-
-Start the CLI to connect to the server and run SQL queries:
-
-    presto-cli/target/presto-cli-*-executable.jar
-
-Run a query to see the nodes in the cluster:
-
-    SELECT * FROM system.runtime.nodes;
-
-In the sample configuration, the Hive connector is mounted in the `hive` catalog, so you can run the following queries to show the tables in the Hive database `default`:
-
-    SHOW TABLES FROM hive.default;
-
-## Code Style
-
-We recommend you use IntelliJ as your IDE. The code style template for the project can be found in the [codestyle](https://github.com/airlift/codestyle) repository along with our general programming and Java guidelines. In addition to those you should also adhere to the following:
-
-* Alphabetize sections in the documentation source files (both in table of contents files and other regular documentation files). In general, alphabetize methods/variables/sections if such ordering already exists in the surrounding code.
-* When appropriate, use the Java 8 stream API. However, note that the stream implementation does not perform well so avoid using it in inner loops or otherwise performance sensitive sections.
-* Categorize errors when throwing exceptions. For example, PrestoException takes an error code as an argument, `PrestoException(HIVE_TOO_MANY_OPEN_PARTITIONS)`. This categorization lets you generate reports so you can monitor the frequency of various failures.
-* Ensure that all files have the appropriate license header; you can generate the license by running `mvn license:format`.
-* Consider using String formatting (printf style formatting using the Java `Formatter` class): `format("Session property %s is invalid: %s", name, value)` (note that `format()` should always be statically imported). Sometimes, if you only need to append something, consider using the `+` operator.
-* Avoid using the ternary operator except for trivial expressions.
-* Use an assertion from Airlift's `Assertions` class if there is one that covers your case rather than writing the assertion by hand. Over time we may move over to more fluent assertions like AssertJ.
-* When writing a Git commit message, follow these [guidelines](https://chris.beams.io/posts/git-commit/).
-
-## Building the Documentation
-
-To learn how to build the docs, see the [docs README](presto-docs/README.md).
-
-## Building the Web UI
-
-The Presto Web UI is composed of several React components and is written in JSX and ES6. This source code is compiled and packaged into browser-compatible Javascript, which is then checked in to the Presto source code (in the `dist` folder). You must have [Node.js](https://nodejs.org/en/download/) and [Yarn](https://yarnpkg.com/en/) installed to execute these commands. To update this folder after making changes, simply run:
-
-    yarn --cwd presto-main/src/main/resources/webapp/src install
-
-If no Javascript dependencies have changed (i.e., no changes to `package.json`), it is faster to run:
-
-    yarn --cwd presto-main/src/main/resources/webapp/src run package
-
-To simplify iteration, you can also run in `watch` mode, which automatically re-compiles when changes to source files are detected:
-
-    yarn --cwd presto-main/src/main/resources/webapp/src run watch
-
-To iterate quickly, simply re-build the project in IntelliJ after packaging is complete. Project resources will be hot-reloaded and changes are reflected on browser refresh.
-
-## Release Notes
-
-When authoring a pull request, the PR description should include its relevant release notes.
-Follow [Release Notes Guidelines](https://github.com/prestodb/presto/wiki/Release-Notes-Guidelines) when authoring release notes. 
