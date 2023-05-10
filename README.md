@@ -89,6 +89,9 @@ mvn assembly:assembly \
   -Dfindbugs.skip=true
 ```
 
+The wss-estimation dataset is too large to upload, you can download the MSR dataset at http://iotta.snia.org/traces/block-io/388, and twitter dataset at https://github.com/twitter/cache-trace. We have prepare them in our EC2 machine path `~/wss-estimation/datasets`.  
+
+
 ##  Steps for Evaluating Cuki
 We have automated most of the integration and launching operations of our artifact. You can refer to the script files in wss-estimation and presto_cuki.
 
@@ -104,7 +107,7 @@ mvn assembly:assembly \
   -Dcheckstyle.skip=true \
   -Dfindbugs.skip=true
 ```
-3. Run the `.sh` files, note that msr_ccf_mem should run twice with different `OPPO_AGING` parameters (true|false), the cmd will output the result file path.:
+2. Run the `.sh` files, note that msr_ccf_mem should run twice with different `OPPO_AGING` parameters (true|false), the cmd will output the result file path.:
 ```
 cd wss-estimation
 bash ./bin/accuracy/msr_ccf_mem.sh
@@ -113,7 +116,7 @@ bash ./bin/accuracy/msr_mbf_mem.sh
 bash ./bin/accuracy/msr_ss_mem.sh
 bash ./bin/accuracy/msr_swamp_mem.sh
 ```
-5. After all methods get evaluated, run the following command to get your figure! The output figure path will displayed in the cmd:
+3. After all methods get evaluated, run the following command to get your figure! The output figure path will displayed in the cmd:
 ```
 python3 ./plot/plot_msr_accuracy.py
 ```
