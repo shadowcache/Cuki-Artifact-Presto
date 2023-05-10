@@ -9,24 +9,6 @@ step="5"
 slaves=["ip_172_31_5_163_ap_east_1_compute_internal"]
 
 
-
-
-# SHADOW
-# com_facebook_alluxio_Client_CacheShadowCacheBytesHit_slave017_Count/com_facebook_alluxio_Client_CacheShadowCacheBytesRead_slave017_Count
-
-# LOCAL
-# com_facebook_alluxio_Client_CacheBytesReadCache_presto_worker_Count
-# com_facebook_alluxio_Client_CacheBytesReadExternal_presto_worker_Count
-
-# dump json
-# import json  
-# numbers = [2, 3, 5, 7, 11, 13] #存储内容种类多样，可以任意类型
-# filename = 'numbers.json'  #文件路径   一般文件对象类型为json文件
-# with open(filename, 'w') as f_obj:#打开模式为可写
-# 	json.dump(numbers, f_obj)  #存储文件
-
-# com_facebook_alluxio_Client_CacheBytesReadCache_slave017_FiveMinuteRate
-# com_facebook_alluxio_Client_CacheShadowCacheBytesHit_slave017_Count/com_facebook_alluxio_Client_CacheShadowCacheBytesRead_slave017_Count&start=1661928731&end=1661932331&step=1
 def to_ms(t):
     print(pd.to_timedelta("1ms").total_seconds())
 
